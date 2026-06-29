@@ -6,3 +6,4 @@ reportlab
 pandas
 python-dotenv
 langchain-openai
+langsmith 
