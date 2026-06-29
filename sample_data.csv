@@ -1,0 +1,6 @@
+echo site,source,consumption,unit > sample_data.csv
+echo DAMAC Heights,DEWA,500,MWh >> sample_data.csv
+echo DAMAC Maison,DEWA,320,MWh >> sample_data.csv
+echo DAMAC Lagoons,EWEC,180,MWh >> sample_data.csv
+echo DAMAC Hills,Diesel,2000,litres >> sample_data.csv
+echo DAMAC Paramount,DEWA,750,MWh >> sample_data.csv
