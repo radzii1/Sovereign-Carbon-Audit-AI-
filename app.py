@@ -2,9 +2,15 @@ import streamlit as st
 import pandas as pd
 from openai import OpenAI
 from typing import TypedDict
+import os
+from langsmith import Client
+from langsmith.wrappers import wrap_openai
 
-client = OpenAI(api_key="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")
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_API_KEY"] = st.secrets["LANGSMITH_API_KEY"]
+os.environ["LANGCHAIN_PROJECT"] = "sovereign-carbon-audit-ai"
 
+client = wrap_openai(OpenAI(api_key=st.secrets["OPENAI_API_KEY"]))
 st.set_page_config(
     page_title="Sovereign Carbon Audit AI", 
     page_icon="🌿", 
