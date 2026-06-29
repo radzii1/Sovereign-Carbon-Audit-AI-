@@ -296,6 +296,7 @@ uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
+    df.columns = df.columns.str.strip().str.lower()
     st.success(f"✓ File uploaded — {len(df)} sites detected")
     st.dataframe(df, use_container_width=True)
     
