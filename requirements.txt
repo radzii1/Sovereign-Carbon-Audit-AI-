@@ -1,0 +1,8 @@
+openai
+langchain
+langgraph
+streamlit
+reportlab
+pandas
+python-dotenv
+langchain-openai
