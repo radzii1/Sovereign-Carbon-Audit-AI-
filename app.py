@@ -82,7 +82,7 @@ CONTEXT:
 
 Return ONLY this exact format, nothing else:
 CALCULATION: [show the math step by step]
-RESULT: [number only, no units]
+RESULT: [final answer in tonnes CO2 only, convert kg to tonnes by dividing by 1000]
 SCOPE: {factor_info['scope']}"""
             },
             {
