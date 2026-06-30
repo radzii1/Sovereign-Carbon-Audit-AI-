@@ -7,3 +7,4 @@ pandas
 python-dotenv
 langchain-openai
 langsmith 
+qdrant-client
