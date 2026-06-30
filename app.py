@@ -420,6 +420,13 @@ if "final_report" not in st.session_state:
 st.title("🌿 Sovereign Carbon Audit AI")
 st.caption("UAE Enterprise ESG Reporting System — GHG Protocol Aligned")
 st.divider()
+with st.expander("⚙️ Vector Database Setup (run once)"):
+    st.caption("Click this once to load UAE emission factors into Qdrant as vector embeddings.")
+    if st.button("🔧 Setup Qdrant Vector Database"):
+        with st.spinner("Embedding and uploading emission factors to Qdrant..."):
+            count = setup_qdrant_collection()
+        st.success(f"✓ Uploaded {count} emission factors to Qdrant vector database.")
+
 
 st.markdown("### Step 1 — Upload Consumption Data")
 st.caption("Upload a CSV with columns: site, source, consumption, unit")
