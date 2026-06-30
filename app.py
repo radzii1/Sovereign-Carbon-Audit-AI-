@@ -27,6 +27,97 @@ st.set_page_config(
     layout="wide"
 )
 
+from qdrant_client import QdrantClient
+from qdrant_client.models import VectorParams, Distance, PointStruct
+ 
+qdrant = QdrantClient(
+    url=st.secrets["QDRANT_URL"],
+    api_key=st.secrets["QDRANT_API_KEY"],
+)
+ 
+QDRANT_COLLECTION = "uae_emission_factors"
+ 
+EMISSION_FACTORS_SEED_DATA = [
+    {"source": "DEWA", "description": "Dubai Electricity and Water Authority grid electricity, Dubai emirate power supply, DEWA electricity consumption, Dubai utility power", "factor": 0.400, "unit": "kg CO2/kWh", "scope": "Scope 2"},
+    {"source": "EWEC", "description": "Emirates Water and Electricity Company grid electricity, Abu Dhabi power supply, EWEC electricity, federal UAE grid power", "factor": 0.380, "unit": "kg CO2/kWh", "scope": "Scope 2"},
+    {"source": "ADDC", "description": "Abu Dhabi Distribution Company grid electricity, ADDC power supply, Abu Dhabi emirate electricity distribution", "factor": 0.390, "unit": "kg CO2/kWh", "scope": "Scope 2"},
+    {"source": "SEWA", "description": "Sharjah Electricity and Water Authority grid electricity, SEWA power supply, Sharjah emirate electricity", "factor": 0.395, "unit": "kg CO2/kWh", "scope": "Scope 2"},
+    {"source": "Diesel", "description": "diesel fuel combustion, backup generator diesel, site diesel consumption, diesel litres burned, generator fuel", "factor": 2.680, "unit": "kg CO2/litre", "scope": "Scope 1"},
+    {"source": "Gas", "description": "natural gas combustion, LPG gas, site gas consumption, gas litres burned, cooking gas, heating gas", "factor": 2.040, "unit": "kg CO2/litre", "scope": "Scope 1"},
+    {"source": "Petrol", "description": "petrol fuel, gasoline combustion, vehicle fleet petrol, company car fuel consumption", "factor": 2.310, "unit": "kg CO2/litre", "scope": "Scope 1"},
+    {"source": "Water", "description": "desalinated water consumption, water usage, municipal water supply, water treatment emissions", "factor": 0.344, "unit": "kg CO2/m3", "scope": "Scope 3"},
+]
+ 
+ 
+def get_embedding(text: str) -> list:
+    """Converts text into a vector using OpenAI's embedding model"""
+    response = client.embeddings.create(
+        model="text-embedding-3-small",
+        input=text
+    )
+    return response.data[0].embedding
+ 
+ 
+def setup_qdrant_collection():
+    """One-time setup: creates collection and uploads all emission factors as vectors"""
+    collections = qdrant.get_collections().collections
+    existing_names = [c.name for c in collections]
+ 
+    if QDRANT_COLLECTION in existing_names:
+        qdrant.delete_collection(QDRANT_COLLECTION)
+ 
+    qdrant.create_collection(
+        collection_name=QDRANT_COLLECTION,
+        vectors_config=VectorParams(size=1536, distance=Distance.COSINE),
+    )
+ 
+    points = []
+    for i, item in enumerate(EMISSION_FACTORS_SEED_DATA):
+        vector = get_embedding(item["description"])
+        points.append(
+            PointStruct(
+                id=i,
+                vector=vector,
+                payload={
+                    "source": item["source"],
+                    "description": item["description"],
+                    "factor": item["factor"],
+                    "unit": item["unit"],
+                    "scope": item["scope"],
+                }
+            )
+        )
+ 
+    qdrant.upsert(collection_name=QDRANT_COLLECTION, points=points)
+    return len(points)
+ 
+ 
+@traceable(name="Qdrant Retrieval")
+def retrieve_emission_factor(source_query: str) -> dict:
+    """
+    Semantic search — finds the closest matching emission factor
+    even if the input wording doesn't exactly match (e.g. 'Dubai electricity' -> DEWA)
+    """
+    query_vector = get_embedding(source_query)
+ 
+    results = qdrant.query_points(
+        collection_name=QDRANT_COLLECTION,
+        query=query_vector,
+        limit=1,
+    ).points
+ 
+    if not results:
+        return None
+ 
+    match = results[0]
+    return {
+        "source": match.payload["source"],
+        "factor": match.payload["factor"],
+        "unit": match.payload["unit"],
+        "scope": match.payload["scope"],
+        "confidence": round(match.score, 3),
+    }
+
 # ─── EMISSION FACTORS DATABASE ───────────────────────────────────────────────
 # Mock vector database — will be replaced by Qdrant with semantic search
 EMISSION_FACTORS = {
